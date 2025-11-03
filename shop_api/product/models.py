@@ -11,7 +11,7 @@ class Product(models.Model):
     title = models.CharField(max_length=255)
     description = models.TextField(null=True, blank=True)
     price = models.IntegerField()
-    category = models.ForeignKey(Category, on_delete=models.CASCADE)
+    category = models.ForeignKey(Category, on_delete=models.CASCADE, null=True, blank=True)
 
     def __str__(self):
         return self.title
@@ -29,7 +29,7 @@ STARS = (
 
 class Review(models.Model):
     text = models.TextField(max_length=300)
-    product = models.ForeignKey(Product, on_delete=models.CASCADE,
+    product = models.ForeignKey(Product, on_delete=models.CASCADE, null=True, blank=True,
                                 related_name='reviews')
     stars = models.IntegerField(choices=STARS, default=5)
 
