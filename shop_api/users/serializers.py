@@ -1,8 +1,9 @@
 from rest_framework import serializers
 from rest_framework.exceptions import ValidationError
-from users.models import ConfirmCode, CustomUser
+from users.models import  CustomUser
 from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
-
+from django.contrib.auth import authenticate
+from . import utils
 
 class UserBaseSerializer(serializers.Serializer):
     email = serializers.EmailField()
@@ -34,22 +35,34 @@ class ConfirmSerializer(serializers.Serializer):
         except CustomUser.DoesNotExist:
             raise ValidationError('CustomUser не существует!')
 
-        try:
-            confirmation_code = ConfirmCode.objects.get(user=user)
-        except ConfirmCode.DoesNotExist:
-            raise ValidationError('Код подтверждения не найден!')
-
-        if confirmation_code.code != code:
-            raise ValidationError('Неверный код подтверждения!')
-
+        if not utils.verify_confirmation_code(user.email, code):
+            raise serializers.ValidationError("Неверный код подтверждения")
+        attrs['user'] = user
         return attrs
     
+    def save(self, **kwargs):
+        user = self.validated_data['user']
+        user.is_active = True
+        user.save()
+    
 class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
-    @classmethod
-    def get_token(cls, user):
-        token = super().get_token(user)
-        token['birthday'] = user.birthday.isoformat() if user.birthday else None
-        return token
+    def validate(self, attrs):
+    
+        authenticate_kwargs = {
+            'email': attrs['email'],
+            'password': attrs['password'],
+        }
+        self.user = authenticate(**authenticate_kwargs)
+        if not self.user or not self.user.is_active:
+            raise serializers.ValidationError(
+                'No active account found with the given credentials'
+            )
+        data = super().validate(attrs)
+        data['birthday'] = self.user.birthday.isoformat() if self.user.birthday else None
+        return data
+
     
 class OuathCodeSerializer(serializers.Serializer):
     code = serializers.CharField()
+
+

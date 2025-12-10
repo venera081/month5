@@ -4,13 +4,14 @@ from rest_framework import status
 from rest_framework.authtoken.models import Token 
 from django.contrib.auth import authenticate
 from .serializers import RegisterValidateSerializer, AuthValidateSerializer, ConfirmSerializer
-from users.models import ConfirmCode, CustomUser
+from users.models import  CustomUser
 import random
 import string
 from rest_framework.views import APIView
 from rest_framework.generics import CreateAPIView
 from users.serializers import CustomTokenObtainPairSerializer
 from rest_framework_simplejwt.views import TokenObtainPairView
+from . import utils
 
 
 class AuthorizationAPIView(CreateAPIView):
@@ -57,20 +58,18 @@ class RegistrationAPIView(CreateAPIView):
                 is_active=False
             )
 
-            code = ''.join(random.choices(string.digits, k=6))
+            code = utils.generate_confirmation_code()
+            utils.save_code_to_cache(user.email, code)
+            print("Code generated and saved to cache")
 
-            confirm_code = ConfirmCode.objects.create(
-                user=user,
-                code=code
+
+            return Response(
+                status=status.HTTP_201_CREATED,
+                data={
+                    'user_id': user.id,
+                    'confirm_code': code
+                }
             )
-
-        return Response(
-            status=status.HTTP_201_CREATED,
-            data={
-                'user_id': user.id,
-                'confirm_code': code
-            }
-        )
     
 
 class ConfirmUserAPIView(CreateAPIView):
@@ -88,8 +87,6 @@ class ConfirmUserAPIView(CreateAPIView):
             user.save()
 
             token, _ = Token.objects.get_or_create(user=user)
-
-            ConfirmCode.objects.filter(user=user).delete()
 
         return Response(
             status=status.HTTP_200_OK,

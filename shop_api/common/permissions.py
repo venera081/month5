@@ -3,5 +3,7 @@ from rest_framework.permissions import BasePermission
 class IsModerator(BasePermission):
     def has_permission(self, request, view):
         if request.method == 'POST':
-            return request.user.is_authenticated  # любой авторизованный
-        return request.user.is_authenticated and request.user.is_staff  # остальные методы — только модератор
+            return request.user.is_authenticated
+        if request.method == 'GET':
+            return request.user.is_authenticated
+        return request.user.is_authenticated and request.user.is_staff
