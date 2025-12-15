@@ -10,7 +10,7 @@ from users.serializers import CustomTokenObtainPairSerializer
 from rest_framework_simplejwt.views import TokenObtainPairView
 from . import utils
 
-# Импортируем задачи Celery
+
 from users.tasks import save_random_code, send_welcome_email
 
 class AuthorizationAPIView(CreateAPIView):

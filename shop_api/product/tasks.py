@@ -1,4 +1,4 @@
-# products/tasks.py
+
 from celery import shared_task
 from django.core.mail import send_mail
 from django.conf import settings
@@ -31,6 +31,6 @@ def notify_new_category(category_id):
         subject=f'Новая категория создана: {category.name}',
         message=f'Категория "{category.name}" была создана.',
         from_email=settings.DEFAULT_FROM_EMAIL,
-        recipient_list=[settings.DEFAULT_FROM_EMAIL],  # можно поменять на email модератора
+        recipient_list=[settings.DEFAULT_FROM_EMAIL], 
         fail_silently=False
     )
