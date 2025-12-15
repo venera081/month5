@@ -1,18 +1,17 @@
 from django.db import transaction
 from rest_framework.response import Response
 from rest_framework import status
-from rest_framework.authtoken.models import Token 
+from rest_framework.authtoken.models import Token
 from django.contrib.auth import authenticate
-from .serializers import RegisterValidateSerializer, AuthValidateSerializer, ConfirmSerializer
-from users.models import  CustomUser
-import random
-import string
-from rest_framework.views import APIView
 from rest_framework.generics import CreateAPIView
+from users.models import CustomUser
+from .serializers import RegisterValidateSerializer, AuthValidateSerializer, ConfirmSerializer
 from users.serializers import CustomTokenObtainPairSerializer
 from rest_framework_simplejwt.views import TokenObtainPairView
 from . import utils
 
+# Импортируем задачи Celery
+from users.tasks import save_random_code, send_welcome_email
 
 class AuthorizationAPIView(CreateAPIView):
     serializer_class = AuthValidateSerializer
@@ -41,7 +40,7 @@ class AuthorizationAPIView(CreateAPIView):
 
 class RegistrationAPIView(CreateAPIView):
     serializer_class = RegisterValidateSerializer
-    
+
     def post(self, request, *args, **kwargs):
         serializer = self.get_serializer(data=request.data)
         serializer.is_valid(raise_exception=True)
@@ -58,19 +57,25 @@ class RegistrationAPIView(CreateAPIView):
                 is_active=False
             )
 
+            
             code = utils.generate_confirmation_code()
             utils.save_code_to_cache(user.email, code)
             print("Code generated and saved to cache")
 
+        
+            save_random_code.delay(user.id)
 
-            return Response(
-                status=status.HTTP_201_CREATED,
-                data={
-                    'user_id': user.id,
-                    'confirm_code': code
-                }
-            )
-    
+            
+            send_welcome_email.delay(user.email)
+
+        return Response(
+            status=status.HTTP_201_CREATED,
+            data={
+                'user_id': user.id,
+                'confirm_code': code
+            }
+        )
+
 
 class ConfirmUserAPIView(CreateAPIView):
     serializer_class = ConfirmSerializer
@@ -95,8 +100,7 @@ class ConfirmUserAPIView(CreateAPIView):
                 'key': token.key
             }
         )
-    
-    
+
+
 class CustomTokenObtainPairView(TokenObtainPairView):
     serializer_class = CustomTokenObtainPairSerializer
-
