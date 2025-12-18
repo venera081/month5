@@ -12,7 +12,7 @@ https://docs.djangoproject.com/en/5.2/ref/settings/
 import os
 from pathlib import Path
 from datetime import timedelta
-from decouple import config
+from decouple import config, Csv
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 
@@ -27,7 +27,7 @@ SECRET_KEY = config("SECRET_KEY")
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True 
 
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = config('ALLOWED_HOSTS', default='127.0.0.1', cast=Csv())
 
 
 # Application definition
@@ -192,7 +192,7 @@ SIMPLE_JWT = {
 CACHES = {
     "default": {
         "BACKEND": "django_redis.cache.RedisCache",
-        "LOCATION": "redis://127.0.0.1:6379/1",
+        "LOCATION": config("REDIS_URL"),
         "OPTIONS": {
             "CLIENT_CLASS": "django_redis.client.DefaultClient",
             "SERIALIZER": "django_redis.serializers.json.JSONSerializer",
@@ -200,8 +200,8 @@ CACHES = {
     }
 }
 
-CELERY_BROKER_URL = "redis://127.0.0.1:6379/2"
-CELERY_RESULTS_BACKEND = "redis://127.0.0.1:6379/2"
+CELERY_BROKER_URL = config("CELERY_BROKER_URL")
+CELERY_RESULTS_BACKEND = config("CELERY_RESULTS_BACKEND")
 
 EMAIL_USE_TLS = True
 EMAIL_HOST = 'smtp.gmail.com'
