@@ -33,6 +33,7 @@ class Review(models.Model):
     product = models.ForeignKey(Product, on_delete=models.CASCADE, null=True, blank=True,
                                 related_name='reviews')
     stars = models.IntegerField(choices=STARS, default=5)
+    created_at = models.DateTimeField(auto_now_add=True)
 
     def __str__(self):
         return self.text

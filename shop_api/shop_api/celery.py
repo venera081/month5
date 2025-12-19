@@ -16,7 +16,7 @@ app.conf.beat_schedule = {
         'schedule': crontab(hour=0, minute=0),
     },
     'delete-old-reviews-daily': {
-        'task': 'products.tasks.delete_old_reviews',
+        'task': 'product.tasks.delete_old_reviews',
         'schedule': crontab(hour=0, minute=0),  
     },
 }
